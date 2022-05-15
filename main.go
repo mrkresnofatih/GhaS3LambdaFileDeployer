@@ -33,26 +33,29 @@ func main() {
 		lambdaFunc,
 	)
 	if !isAllParamsAvailable {
-		fmt.Println("Input incomplete!")
+		fmt.Println("[FAIL]: Input incomplete!")
 		return
 	}
+	fmt.Println("[SCCS]: All Params Available!")
 
 	// Create AWS Session
 	sess, err := sess.NewSession(&aws.Config{
 		Region: aws.String(awsRegion),
 	})
 	if err != nil {
-		fmt.Println("Failed to start new S3 Manager Session: ", err)
+		fmt.Println("[FAIL]: Failed to start new S3 Manager Session: ", err)
 		return
 	}
+	fmt.Println("[SCCS]: Created AWS Session!")
 
 	// Create Uploader Instance
 	uploader := s3manager.NewUploader(sess)
 	f, er := os.Open(filePathInRepo)
 	if er != nil {
-		fmt.Println("Failed to open file: ", er)
+		fmt.Println("[FAIL]: Failed to open file: ", er)
 		return
 	}
+	fmt.Println("[SCCS]: Uploader Instance Created!")
 
 	// Upload The File to S3
 	versionedFilename := generateVersionedFilename(fileName)
@@ -62,26 +65,35 @@ func main() {
 		Body:   f,
 	})
 	if e != nil {
-		fmt.Println("Failed to upload file: ", e)
+		fmt.Println("[FAIL]: Failed to upload file: ", e)
 		return
 	}
-	fmt.Println("File uploaded to S3")
+	fmt.Println("[SCCS]: File Uploaded to S3!")
 
 	// Create Lambda Client Instance
 	lsvc := lambda.New(sess)
 
+	// Create UpdateFunctionCodeInput
 	req := new(lambda.UpdateFunctionCodeInput)
 	req.SetFunctionName(lambdaFunc)
 	req.SetS3Bucket(bucketAddress)
 	req.SetS3Key(versionedFilename)
 
+	// Validate UpdateFunctionCodeInput
+	req_err := req.Validate()
+	if req_err != nil {
+		fmt.Println("[FAIL]: UpdateFunctionCodeInput Validation Failed: ", req_err)
+		return
+	}
+	fmt.Println("[SCCS]: UpdateFunctionCodeInput Validation Succeeded!")
+
 	// Update Lambda Function
 	_, errr := lsvc.UpdateFunctionCode(req)
 	if errr != nil {
-		fmt.Println("Failed to Update Lambda Function Code")
+		fmt.Println("[FAIL] Failed to Update Lambda Function Code", errr)
 		return
 	}
-	fmt.Println("Successfully Updated Lambda Function")
+	fmt.Println("[SCCS]: Target Lambda Function Updated!")
 }
 
 // Generate Filename with Versioning Suffix
