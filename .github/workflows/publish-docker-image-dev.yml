@@ -1,0 +1,21 @@
+name: Dev-Dockerize the Application
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  build-push:
+    name: Build Docker Image & Push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        name: Check out code
+      - uses: mr-smithers-excellent/docker-build-push@v5
+        name: Build & push Docker image
+        with:
+          image: ghcr.io/mrkresnofatih/gha-s3-lambda-file-deployer
+          registry: ghcr.io
+          tags: latest-dev, v1.0.${{ github.run_number }}-dev
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
